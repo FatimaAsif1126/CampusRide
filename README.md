@@ -4,6 +4,7 @@ Technologies / Database Engine
 •	Database Engine: My SQL Server
 •	Backend: Node.js with Express.js
 •	Frontend: React.js / HTML + CSS + JavaScript
+•	Framework: Tailwind CSS
 Platform / Operating System
 Development: Windows/Linux
 Deployment: Web-based (cross-platform)
