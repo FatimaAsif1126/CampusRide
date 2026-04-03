@@ -49,9 +49,7 @@ function Profile() {
                         </div>
                     </div>
                     
-                    <button className="mt-6 w-full bg-purple-700 hover:bg-purple-600 text-white py-2 rounded-xl transition-colors">
-                        Edit Profile (Coming Soon)
-                    </button>
+                    {/* Edit Profile button removed */}
                 </div>
             </div>
         </>

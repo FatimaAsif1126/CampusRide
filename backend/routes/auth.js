@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { sql, getPool } = require('../config/db');
+const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 
 // ==================== SIGNUP ====================
@@ -40,7 +41,7 @@ router.post("/signup", async (req, res) => {
             .input('PasswordHash', sql.VarChar, hashedPassword)
             .input('Phone', sql.VarChar, phone)
             .input('Role', sql.VarChar, role)
-            .input('Gender', sql.Char, gender || null)  // ← ADD THIS
+            .input('Gender', sql.Char, gender || null) 
             .query(`
         INSERT INTO Users (Name, Email, PasswordHash, Phone, Role, Gender, CreatedAt)
         VALUES (@Name, @Email, @PasswordHash, @Phone, @Role, @Gender, GETDATE())
@@ -55,7 +56,7 @@ router.post("/signup", async (req, res) => {
         const token = jwt.sign(
             { userId: user.UserID, email: user.Email, role: user.Role },
             process.env.JWT_SECRET || 'mysecretkey',
-            { expiresIn: '7d' }
+            { expiresIn: '1m' }
         );
 
         res.status(201).json({
@@ -145,5 +146,12 @@ router.post("/login", async (req, res) => {
         });
     }
 });
-
+// ==================== VERIFY TOKEN ====================
+router.get('/verify', authMiddleware, (req, res) => {
+    res.json({ 
+        valid: true, 
+        user: req.user 
+    });
+});
+    
 module.exports = router;
