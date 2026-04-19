@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Calendar } from 'lucide-react';  // ADD Calendar icon
 
 function Navbar() {
     const navigate = useNavigate();
@@ -28,6 +28,15 @@ function Navbar() {
                         CAMPUSRIDE
                     </div>
                 </Link>
+
+                {/* Center nav links - JUST My Bookings */}
+                <div className="flex items-center gap-2">
+                    <Link to="/my-bookings"
+                        className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-purple-300 transition-colors px-3 py-1.5 rounded-xl hover:bg-purple-900/20">
+                        <Calendar size={14} />
+                        My Bookings
+                    </Link>
+                </div>
 
                 {/* Right side */}
                 <div className="flex items-center gap-3">

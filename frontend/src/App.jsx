@@ -4,6 +4,7 @@ import Signup from './pages/signup';     // lowercase s
 import Dashboard from './pages/dashboard';
 import ProtectedRoute from './components/ProtectedRoutes';
 import Profile from './pages/profile';
+import MyBookings from './pages/MyBookings';
 const router = createBrowserRouter([
   {
     path: "/",
@@ -26,6 +27,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <Profile />
+      </ProtectedRoute>
+    )
+  },
+  {                                           
+    path: "/my-bookings",
+    element: (
+      <ProtectedRoute>
+        <MyBookings />
       </ProtectedRoute>
     )
   }
