@@ -1,10 +1,38 @@
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import Welcome from './pages/welcome';   // lowercase w
+import Signup from './pages/signup';     // lowercase s
+import Dashboard from './pages/dashboard';
+import ProtectedRoute from './components/ProtectedRoutes';
+import Profile from './pages/profile';
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Welcome />              // Capital W (component name)
+  },
+  {
+    path: "/signup",
+    element: <Signup />               // Capital S (component name)
+  },
+  {
+    path: "/dashboard",
+    element: (
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/profile",
+    element: (
+      <ProtectedRoute>
+        <Profile />
+      </ProtectedRoute>
+    )
+  }
+]);
+
 function App() {
-  return (
-    <div className="bg-blue-500 text-white p-10 text-center">
-      <h1 className="text-4xl font-bold">CampusRide</h1>
-      <p className="mt-4">Tailwind is working!</p>
-    </div>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
