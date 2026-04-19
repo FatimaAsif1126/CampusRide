@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/rides', require('./routes/rides'));
-
+app.use('/api/bookings', require('./routes/bookings')); 
 app.get('/', (req, res) => {
     res.json({ message: 'CampusRide API is running!' });
 });

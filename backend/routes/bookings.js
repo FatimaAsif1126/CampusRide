@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const sql = require('mssql');
-const { protect } = require('../middleware/auth');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // POST /api/bookings - Create a booking
-router.post('/', protect, async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
     const { rideId, seatsToBook } = req.body;
     const passengerId = req.user.UserID;
 
@@ -24,7 +24,6 @@ router.post('/', protect, async (req, res) => {
 
         const totalFare = ride.PricePerSeat * seatsToBook;
 
-        // Transaction to ensure both tables update or neither does
         const transaction = new sql.Transaction(pool);
         await transaction.begin();
 
@@ -56,7 +55,7 @@ router.post('/', protect, async (req, res) => {
 });
 
 // GET /api/bookings/my - Get user's bookings
-router.get('/my', protect, async (req, res) => {
+router.get('/my', authMiddleware, async (req, res) => { 
     try {
         const pool = await sql.connect();
         const result = await pool.request()
@@ -78,7 +77,7 @@ router.get('/my', protect, async (req, res) => {
 });
 
 // PUT /api/bookings/:id/cancel - Cancel booking
-router.put('/:id/cancel', protect, async (req, res) => {
+router.put('/:id/cancel', authMiddleware, async (req, res) => {  
     try {
         const pool = await sql.connect();
 

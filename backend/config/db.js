@@ -1,13 +1,23 @@
-const sql = require('mssql/msnodesqlv8');
+const sql = require('mssql');
 
 const dbConfig = {
-    connectionString: 'Driver={ODBC Driver 17 for SQL Server};Server=Fatima-Asif\\SQLEXPRESS;Database=CampusRide;Trusted_Connection=yes;'
+    server: "localhost",
+    port: 1433,
+    database: "CampusRide",
+    user: "sa",
+    password: "fatima1126",
+    options: {
+        encrypt: false,
+        trustServerCertificate: true,
+        enableArithAbort: true
+    }
 };
 
 let globalPool = null;
 
 const connectDB = async () => {
     try {
+        console.log('Connecting to SQL Server...');
         globalPool = await sql.connect(dbConfig);
         console.log('✅ Connected to SQL Server');
         return globalPool;

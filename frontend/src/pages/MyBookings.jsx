@@ -1,22 +1,32 @@
 ﻿import React, { useState, useEffect } from 'react';
 
-const MyBookings = ({ token }) => {
+const MyBookings = () => {  // ← remove { token } prop
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
+    
+    const token = localStorage.getItem('token'); // ← add this line
 
     const fetchBookings = async () => {
-        try {
-            const response = await fetch('/api/bookings/my', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            setBookings(data);
-        } catch (error) {
-            console.error("Error:", error);
-        } finally {
-            setLoading(false);
+    try {
+        const response = await fetch('http://localhost:5000/api/bookings/my', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('Bookings fetch failed:', data);
+            setBookings([]); // ← prevent .map crash
+            return;
         }
-    };
+
+        setBookings(Array.isArray(data) ? data : []); // ← safety net
+    } catch (error) {
+        console.error("Error:", error);
+        setBookings([]);
+    } finally {
+        setLoading(false);
+    }
+};
 
     useEffect(() => { fetchBookings(); }, []);
 
