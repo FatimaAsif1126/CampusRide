@@ -1,7 +1,7 @@
 const sql = require('mssql');
 
 const dbConfig = {
-    server: "localhost\\SQLEXPRESS",  // or "aliza\\SQLEXPRESS"
+    server: "localhost\\SQLEXPRESS",
     database: "CampusRide",
     user: "campusride_user",
     password: "campusride123",

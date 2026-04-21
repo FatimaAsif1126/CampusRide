@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 
-const BookingModal = ({ ride, isOpen, onClose, token }) => {
+const BookingModal = ({ ride, isOpen, onClose }) => {
     const [seatsToBook, setSeatsToBook] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    if (!isOpen) return null;
+    if (!isOpen || !ride) return null;
 
     const handleBook = async () => {
         setLoading(true);
         setError(null);
+
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            setError('You are not logged in. Please log in first.');
+            setLoading(false);
+            return;
+        }
+
         try {
-            const response = await fetch('/api/bookings', {
+            const response = await fetch('http://localhost:5000/api/bookings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -25,51 +34,91 @@ const BookingModal = ({ ride, isOpen, onClose, token }) => {
 
             const data = await response.json();
 
-            if (!response.ok) throw new Error(data.message || 'Failed to book ride');
-
-            alert(`Success! Total Fare: Rs. ${data.totalFare}`);
-            onClose();
+            if (response.ok && data.success) {
+                alert(`✅ Booking confirmed! Total Fare: Rs. ${data.totalFare}`);
+                onClose();
+                window.location.reload();
+            } else {
+                setError(data.message || 'Failed to book ride');
+            }
         } catch (err) {
-            setError(err.message);
+            setError('Failed to connect to server.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-6 rounded-lg w-96">
-                <h2 className="text-xl font-bold mb-4">Book Ride to {ride.Destination}</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
+            <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
 
-                <div className="mb-4">
-                    <p><strong>Available Seats:</strong> {ride.AvailableSeats}</p>
-                    <p><strong>Price per Seat:</strong> Rs. {ride.PricePerSeat}</p>
+                <h2 className="text-2xl font-bold mb-2 text-gray-800">
+                    Book Ride
+                </h2>
+                <p className="text-gray-500 mb-6">
+                    {ride.Source} → {ride.Destination}
+                </p>
+
+                <div className="bg-gray-50 rounded-xl p-4 mb-6 space-y-2">
+                    <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Driver</span>
+                        <span className="font-medium">{ride.DriverName}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Available Seats</span>
+                        <span className="font-medium">{ride.AvailableSeats}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Price per Seat</span>
+                        <span className="font-medium">Rs. {ride.PricePerSeat}</span>
+                    </div>
                 </div>
 
-                <div className="mb-4">
-                    <label className="block mb-2">Seats to Book:</label>
-                    <input
-                        type="number"
-                        min="1"
-                        max={ride.AvailableSeats}
-                        value={seatsToBook}
-                        onChange={(e) => setSeatsToBook(parseInt(e.target.value))}
-                        className="w-full border p-2 rounded"
-                    />
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Seats to Book
+                    </label>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setSeatsToBook(prev => Math.max(1, prev - 1))}
+                            className="w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 text-xl font-bold flex items-center justify-center"
+                        >
+                            −
+                        </button>
+                        <span className="text-2xl font-bold w-8 text-center text-purple-600">{seatsToBook}</span>
+                        <button
+                            onClick={() => setSeatsToBook(prev => Math.min(ride.AvailableSeats, prev + 1))}
+                            className="w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 text-xl font-bold flex items-center justify-center"
+                        >
+                            +
+                        </button>
+                    </div>
                 </div>
 
-                <div className="mb-6 font-semibold text-lg text-blue-600">
-                    Total Estimated: Rs. {ride.PricePerSeat * seatsToBook}
+                <div className="flex justify-between items-center mb-6 p-4 bg-purple-50 rounded-xl">
+                    <span className="text-gray-600 font-medium">Total Estimated</span>
+                    <span className="text-2xl font-bold text-purple-600">
+                        Rs. {ride.PricePerSeat * seatsToBook}
+                    </span>
                 </div>
 
-                {error && <p className="text-red-500 mb-4">{error}</p>}
+                {error && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-red-600 text-sm">{error}</p>
+                    </div>
+                )}
 
-                <div className="flex justify-end gap-2">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors"
+                    >
+                        Cancel
+                    </button>
                     <button
                         onClick={handleBook}
                         disabled={loading}
-                        className="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-blue-300"
+                        className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white font-semibold transition-colors"
                     >
                         {loading ? 'Booking...' : 'Confirm Booking'}
                     </button>

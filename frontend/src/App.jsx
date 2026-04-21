@@ -1,12 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Welcome from './pages/welcome';
 import Signup from './pages/signup';
+import Login from './pages/Login';        // ← ADDED
 import Dashboard from './pages/dashboard';
 import ProtectedRoute from './components/ProtectedRoutes';
 import Profile from './pages/profile';
 import MyBookings from './pages/MyBookings';
 
-// Your pages (Aliza)
+// Aliza's pages
 import CreateRide from './pages/CreateRide';
 import MyRides from './pages/MyRides';
 import EditRide from './pages/EditRide';
@@ -22,52 +23,53 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<Welcome />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />  {/* ← ADDED */}
 
-        {/* Protected routes (require login) */}
+        {/* Protected routes */}
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         } />
-        
+
         <Route path="/profile" element={
           <ProtectedRoute>
             <Profile />
           </ProtectedRoute>
         } />
-        
+
         <Route path="/my-bookings" element={
           <ProtectedRoute>
             <MyBookings />
           </ProtectedRoute>
         } />
 
-        {/* YOUR ROUTES (Aliza - Ride Management) */}
+        {/* Aliza - Ride Management */}
         <Route path="/create-ride" element={
           <ProtectedRoute>
             <CreateRide />
           </ProtectedRoute>
         } />
-        
+
         <Route path="/my-rides" element={
           <ProtectedRoute>
             <MyRides />
           </ProtectedRoute>
         } />
-        
+
         <Route path="/edit-ride/:id" element={
           <ProtectedRoute>
             <EditRide />
           </ProtectedRoute>
         } />
 
-        {/* ZUNAIRA'S ROUTES (Ride Search) */}
+        {/* Zunaira - Ride Search */}
         <Route path="/rides" element={
           <ProtectedRoute>
             <RideSearch />
           </ProtectedRoute>
         } />
-        
+
         <Route path="/rides/:id" element={
           <ProtectedRoute>
             <RideDetails />

@@ -43,19 +43,20 @@ router.post("/signup", async (req, res) => {
             .input('Role', sql.VarChar, role)
             .input('Gender', sql.Char, gender || null) 
             .query(`
-        INSERT INTO Users (Name, Email, PasswordHash, Phone, Role, Gender, CreatedAt)
-        VALUES (@Name, @Email, @PasswordHash, @Phone, @Role, @Gender, GETDATE())
-    `);
+                INSERT INTO Users (Name, Email, PasswordHash, Phone, Role, Gender, CreatedAt)
+                VALUES (@Name, @Email, @PasswordHash, @Phone, @Role, @Gender, GETDATE())
+            `);
+
         // Get the new user
         const newUser = await pool.request()
             .input('Email', sql.VarChar, email)
             .query('SELECT UserID, Name, Email, Role, Phone, Gender FROM Users WHERE Email = @Email');
         const user = newUser.recordset[0];
 
-        // Generate token
+        // Generate token - using ONLY .env secret
         const token = jwt.sign(
             { userId: user.UserID, email: user.Email, role: user.Role },
-            process.env.JWT_SECRET || 'mysecretkey',
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -99,6 +100,7 @@ router.post("/login", async (req, res) => {
         const result = await pool.request()
             .input('Email', sql.VarChar, email)
             .query('SELECT UserID, Name, Email, PasswordHash, Role, Phone, Gender FROM Users WHERE Email = @Email');
+        
         if (result.recordset.length === 0) {
             return res.status(401).json({
                 success: false,
@@ -118,10 +120,10 @@ router.post("/login", async (req, res) => {
             });
         }
 
-        // Generate token
+        // Generate token - using ONLY .env secret
         const token = jwt.sign(
             { userId: user.UserID, email: user.Email, role: user.Role },
-            process.env.JWT_SECRET || 'mysecretkey',
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -146,6 +148,7 @@ router.post("/login", async (req, res) => {
         });
     }
 });
+
 // ==================== VERIFY TOKEN ====================
 router.get('/verify', authMiddleware, (req, res) => {
     res.json({ 

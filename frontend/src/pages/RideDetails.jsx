@@ -39,6 +39,30 @@ function RideDetails() {
         fetchRideDetails();
     }, [id, token]);
 
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#0e0c15] text-white">
+                <Navbar />
+                <div className="flex justify-center items-center h-64">
+                    <div className="text-purple-400">Loading...</div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-[#0e0c15] text-white">
+                <Navbar />
+                <div className="flex justify-center items-center h-64">
+                    <div className="text-red-400">{error}</div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!ride) return null;
+
     return (
         <div className="min-h-screen bg-[#0e0c15] text-white relative overflow-x-hidden pb-20" style={{ fontFamily: "'Sora', sans-serif" }}>
             <Navbar />
@@ -64,77 +88,75 @@ function RideDetails() {
                     </h1>
                 </div>
 
-                {loading ? (
-                    <div className="text-center text-purple-400 py-10">Loading...</div>
-                ) : error ? (
-                    <div className="text-center text-red-400 py-10">{error}</div>
-                ) : ride ? (
-                    <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            <div>
-                                <div className="text-xs text-zinc-500 mb-1">Source</div>
-                                <div className="text-base text-white">{ride.Source}</div>
-                            </div>
-                            <div>
-                                <div className="text-xs text-zinc-500 mb-1">Destination</div>
-                                <div className="text-base text-white">{ride.Destination}</div>
-                            </div>
-                            <div>
-                                <div className="text-xs text-zinc-500 mb-1">Departure Time</div>
-                                <div className="text-base text-white">
-                                    {new Date(ride.DepartureTime).toLocaleString('en-PK', { dateStyle: 'medium', timeStyle: 'short' })}
-                                </div>
-                            </div>
-                            <div>
-                                <div className="text-xs text-zinc-500 mb-1">Price Per Seat</div>
-                                <div className="text-base text-[#a78bfa] font-semibold">Rs. {ride.PricePerSeat}</div>
-                            </div>
-                            <div>
-                                <div className="text-xs text-zinc-500 mb-1">Driver</div>
-                                <div className="text-base text-white">{ride.DriverName} (★ {ride.DriverRating || 'N/A'})</div>
-                            </div>
-                            <div>
-                                <div className="text-xs text-zinc-500 mb-1">Vehicle</div>
-                                <div className="text-base text-white">{ride.VehicleMake} {ride.VehicleModel} · {ride.VehicleColor}</div>
-                            </div>
-                            <div>
-                                <div className="text-xs text-zinc-500 mb-1">Available Seats</div>
-                                <div className={`text-base ${ride.AvailableSeats === 0 ? 'text-[#f87171]' : 'text-white'}`}>
-                                    {ride.AvailableSeats}
-                                </div>
+                <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <div className="text-xs text-zinc-500 mb-1">Source</div>
+                            <div className="text-base text-white">{ride.Source}</div>
+                        </div>
+                        <div>
+                            <div className="text-xs text-zinc-500 mb-1">Destination</div>
+                            <div className="text-base text-white">{ride.Destination}</div>
+                        </div>
+                        <div>
+                            <div className="text-xs text-zinc-500 mb-1">Departure Time</div>
+                            <div className="text-base text-white">
+                                {new Date(ride.DepartureTime).toLocaleString('en-PK', { dateStyle: 'medium', timeStyle: 'short' })}
                             </div>
                         </div>
-
-                        {ride.waypoints && ride.waypoints.length > 0 && (
-                            <div className="mb-8 border-t border-white/10 pt-6">
-                                <h3 className="text-sm font-semibold text-[#a78bfa] mb-4">Route Stops</h3>
-                                <ul className="space-y-3">
-                                    {ride.waypoints.map((wp, index) => (
-                                        <li key={index} className="flex items-center gap-3 text-sm text-zinc-300">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                                            {wp.Location}
-                                        </li>
-                                    ))}
-                                </ul>
+                        <div>
+                            <div className="text-xs text-zinc-500 mb-1">Price Per Seat</div>
+                            <div className="text-base text-[#a78bfa] font-semibold">Rs. {ride.PricePerSeat}</div>
+                        </div>
+                        <div>
+                            <div className="text-xs text-zinc-500 mb-1">Driver</div>
+                            <div className="text-base text-white">{ride.DriverName} (★ {ride.DriverRating || 'N/A'})</div>
+                        </div>
+                        <div>
+                            <div className="text-xs text-zinc-500 mb-1">Vehicle</div>
+                            <div className="text-base text-white">{ride.VehicleMake} {ride.VehicleModel} · {ride.VehicleColor}</div>
+                        </div>
+                        <div>
+                            <div className="text-xs text-zinc-500 mb-1">Available Seats</div>
+                            <div className={`text-base ${ride.AvailableSeats === 0 ? 'text-[#f87171]' : 'text-white'}`}>
+                                {ride.AvailableSeats}
                             </div>
-                        )}
-
-                        <button
-                            onClick={() => setModalOpen(true)}
-                            disabled={ride.AvailableSeats === 0}
-                            className={`w-full py-4 rounded-xl font-semibold transition-colors ${
-                                ride.AvailableSeats === 0 
-                                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' 
-                                : 'bg-purple-700 hover:bg-purple-600 text-white'
-                            }`}
-                        >
-                            {ride.AvailableSeats === 0 ? 'No Seats Available' : 'Book This Ride'}
-                        </button>
+                        </div>
                     </div>
-                ) : null}
+
+                    {ride.waypoints && ride.waypoints.length > 0 && (
+                        <div className="mb-8 border-t border-white/10 pt-6">
+                            <h3 className="text-sm font-semibold text-[#a78bfa] mb-4">Route Stops</h3>
+                            <ul className="space-y-3">
+                                {ride.waypoints.map((wp, index) => (
+                                    <li key={index} className="flex items-center gap-3 text-sm text-zinc-300">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                                        {wp.Location}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => {
+                            console.log('Button clicked, opening modal');
+                            setModalOpen(true);
+                        }}
+                        disabled={ride.AvailableSeats === 0}
+                        className={`w-full py-4 rounded-xl font-semibold transition-colors ${
+                            ride.AvailableSeats === 0 
+                            ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' 
+                            : 'bg-purple-700 hover:bg-purple-600 text-white'
+                        }`}
+                    >
+                        {ride.AvailableSeats === 0 ? 'No Seats Available' : 'Book This Ride'}
+                    </button>
+                </div>
             </div>
 
-            {ride && modalOpen && (
+            {/* Booking Modal */}
+            {modalOpen && (
                 <BookingModal 
                     ride={ride} 
                     isOpen={modalOpen} 
