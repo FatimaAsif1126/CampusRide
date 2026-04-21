@@ -1,11 +1,10 @@
 const sql = require('mssql');
 
 const dbConfig = {
-    server: "localhost",
-    port: 1433,
+    server: "localhost\\SQLEXPRESS",  // or "aliza\\SQLEXPRESS"
     database: "CampusRide",
-    user: "sa",
-    password: "fatima1126",
+    user: "campusride_user",
+    password: "campusride123",
     options: {
         encrypt: false,
         trustServerCertificate: true,

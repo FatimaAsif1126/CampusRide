@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Welcome from './pages/welcome';
 import Signup from './pages/signup';
 import Dashboard from './pages/dashboard';
@@ -6,97 +6,76 @@ import ProtectedRoute from './components/ProtectedRoutes';
 import Profile from './pages/profile';
 import MyBookings from './pages/MyBookings';
 
-// YOUR imports (Aliza - Ride Management)
+// Your pages (Aliza)
 import CreateRide from './pages/CreateRide';
 import MyRides from './pages/MyRides';
 import EditRide from './pages/EditRide';
 
-// Zunaira's imports (Ride Search)
+// Zunaira's pages
 import RideSearch from './pages/RideSearch';
 import RideDetails from './pages/RideDetails';
 
-const router = createBrowserRouter([
-  // Fatima's routes (Authentication & Bookings)
-  {
-    path: "/",
-    element: <Welcome />
-  },
-  {
-    path: "/signup",
-    element: <Signup />
-  },
-  {
-    path: "/dashboard",
-    element: (
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
-    )
-  },
-  {
-    path: "/profile",
-    element: (
-      <ProtectedRoute>
-        <Profile />
-      </ProtectedRoute>
-    )
-  },
-  {
-    path: "/my-bookings",
-    element: (
-      <ProtectedRoute>
-        <MyBookings />
-      </ProtectedRoute>
-    )
-  },
-  
-  // YOUR routes (Aliza - Ride Management)
-  {
-    path: "/create-ride",
-    element: (
-      <ProtectedRoute>
-        <CreateRide />
-      </ProtectedRoute>
-    )
-  },
-  {
-    path: "/my-rides",
-    element: (
-      <ProtectedRoute>
-        <MyRides />
-      </ProtectedRoute>
-    )
-  },
-  {
-    path: "/edit-ride/:id",
-    element: (
-      <ProtectedRoute>
-        <EditRide />
-      </ProtectedRoute>
-    )
-  },
-  
-  // Zunaira's routes (Ride Search)
-  {
-    path: "/rides",
-    element: (
-      <ProtectedRoute>
-        <RideSearch />
-      </ProtectedRoute>
-    )
-  },
-  {
-    path: "/rides/:id",
-    element: (
-      <ProtectedRoute>
-        <RideDetails />
-      </ProtectedRoute>
-    )
-  }
-]);
-
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<Welcome />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* Protected routes (require login) */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/my-bookings" element={
+          <ProtectedRoute>
+            <MyBookings />
+          </ProtectedRoute>
+        } />
+
+        {/* YOUR ROUTES (Aliza - Ride Management) */}
+        <Route path="/create-ride" element={
+          <ProtectedRoute>
+            <CreateRide />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/my-rides" element={
+          <ProtectedRoute>
+            <MyRides />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/edit-ride/:id" element={
+          <ProtectedRoute>
+            <EditRide />
+          </ProtectedRoute>
+        } />
+
+        {/* ZUNAIRA'S ROUTES (Ride Search) */}
+        <Route path="/rides" element={
+          <ProtectedRoute>
+            <RideSearch />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/rides/:id" element={
+          <ProtectedRoute>
+            <RideDetails />
+          </ProtectedRoute>
+        } />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;
