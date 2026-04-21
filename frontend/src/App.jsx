@@ -5,6 +5,9 @@ import Dashboard from './pages/dashboard';
 import ProtectedRoute from './components/ProtectedRoutes';
 import Profile from './pages/profile';
 import MyBookings from './pages/MyBookings';
+import RideSearch from './pages/RideSearch';
+import RideDetails from './pages/RideDetails';
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -35,6 +38,22 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <MyBookings />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/rides",
+    element: (
+      <ProtectedRoute>
+        <RideSearch />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/rides/:id",
+    element: (
+      <ProtectedRoute>
+        <RideDetails />
       </ProtectedRoute>
     )
   }
