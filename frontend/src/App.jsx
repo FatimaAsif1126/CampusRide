@@ -11,6 +11,10 @@ import CreateRide from './pages/CreateRide';
 import MyRides from './pages/MyRides';
 import EditRide from './pages/EditRide';
 
+// Zunaira's imports (Ride Search)
+import RideSearch from './pages/RideSearch';
+import RideDetails from './pages/RideDetails';
+
 const router = createBrowserRouter([
   // Fatima's routes (Authentication & Bookings)
   {
@@ -68,6 +72,24 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <EditRide />
+      </ProtectedRoute>
+    )
+  },
+  
+  // Zunaira's routes (Ride Search)
+  {
+    path: "/rides",
+    element: (
+      <ProtectedRoute>
+        <RideSearch />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/rides/:id",
+    element: (
+      <ProtectedRoute>
+        <RideDetails />
       </ProtectedRoute>
     )
   }
