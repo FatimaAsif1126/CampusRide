@@ -1,24 +1,80 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import Welcome from './pages/welcome';
+import Signup from './pages/signup';
+import Dashboard from './pages/dashboard';
+import ProtectedRoute from './components/ProtectedRoutes';
+import Profile from './pages/profile';
+import MyBookings from './pages/MyBookings';
+
+// YOUR imports (Aliza - Ride Management)
 import CreateRide from './pages/CreateRide';
 import MyRides from './pages/MyRides';
 import EditRide from './pages/EditRide';
 
+const router = createBrowserRouter([
+  // Fatima's routes (Authentication & Bookings)
+  {
+    path: "/",
+    element: <Welcome />
+  },
+  {
+    path: "/signup",
+    element: <Signup />
+  },
+  {
+    path: "/dashboard",
+    element: (
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/profile",
+    element: (
+      <ProtectedRoute>
+        <Profile />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/my-bookings",
+    element: (
+      <ProtectedRoute>
+        <MyBookings />
+      </ProtectedRoute>
+    )
+  },
+  
+  // YOUR routes (Aliza - Ride Management)
+  {
+    path: "/create-ride",
+    element: (
+      <ProtectedRoute>
+        <CreateRide />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/my-rides",
+    element: (
+      <ProtectedRoute>
+        <MyRides />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/edit-ride/:id",
+    element: (
+      <ProtectedRoute>
+        <EditRide />
+      </ProtectedRoute>
+    )
+  }
+]);
+
 function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={
-          <div className="bg-blue-500 text-white p-10 text-center">
-            <h1 className="text-4xl font-bold">CampusRide</h1>
-            <p className="mt-4">Tailwind is working!</p>
-          </div>
-        } />
-        <Route path="/create-ride" element={<CreateRide />} />
-        <Route path="/my-rides" element={<MyRides />} />
-        <Route path="/edit-ride/:id" element={<EditRide />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
