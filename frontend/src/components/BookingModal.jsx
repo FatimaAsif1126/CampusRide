@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const BookingModal = ({ ride, isOpen, onClose }) => {
+    const navigate = useNavigate();  // ✅ MOVED INSIDE component
     const [seatsToBook, setSeatsToBook] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -35,9 +37,15 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                alert(`✅ Booking confirmed! Total Fare: Rs. ${data.totalFare}`);
                 onClose();
-                window.location.reload();
+                navigate('/payment', {
+                    state: {
+                        bookingId: data.bookingId,
+                        totalFare: data.totalFare,
+                        source: ride.Source,
+                        destination: ride.Destination
+                    }
+                });
             } else {
                 setError(data.message || 'Failed to book ride');
             }
@@ -51,10 +59,7 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
             <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
-
-                <h2 className="text-2xl font-bold mb-2 text-gray-800">
-                    Book Ride
-                </h2>
+                <h2 className="text-2xl font-bold mb-2 text-gray-800">Book Ride</h2>
                 <p className="text-gray-500 mb-6">
                     {ride.Source} → {ride.Destination}
                 </p>
@@ -75,9 +80,7 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
                 </div>
 
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Seats to Book
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Seats to Book</label>
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setSeatsToBook(prev => Math.max(1, prev - 1))}

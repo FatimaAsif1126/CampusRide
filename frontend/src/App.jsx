@@ -1,11 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Welcome from './pages/welcome';
 import Signup from './pages/signup';
-import Login from './pages/Login';        // ← ADDED
+import Login from './pages/Login';
 import Dashboard from './pages/dashboard';
 import ProtectedRoute from './components/ProtectedRoutes';
 import Profile from './pages/profile';
 import MyBookings from './pages/MyBookings';
+import Payment from './pages/Payment';
 
 // Aliza's pages
 import CreateRide from './pages/CreateRide';
@@ -23,7 +24,7 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<Welcome />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />  {/* ← ADDED */}
+        <Route path="/login" element={<Login />} />
 
         {/* Protected routes */}
         <Route path="/dashboard" element={
@@ -41,6 +42,13 @@ function App() {
         <Route path="/my-bookings" element={
           <ProtectedRoute>
             <MyBookings />
+          </ProtectedRoute>
+        } />
+
+        {/* Payment route */}
+        <Route path="/payment" element={
+          <ProtectedRoute>
+            <Payment />
           </ProtectedRoute>
         } />
 
