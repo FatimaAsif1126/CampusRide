@@ -3,7 +3,7 @@ const router = express.Router();
 const { sql, getPool } = require('../config/db');
 const auth = require('../middleware/authMiddleware');
 
-// POST /api/bookings - Create a booking
+// POST /api/bookings - Create or update a booking (add more seats)
 router.post('/', auth, async (req, res) => {
     try {
         const { rideId, seatsToBook } = req.body;
@@ -30,52 +30,92 @@ router.post('/', auth, async (req, res) => {
             return res.status(400).json({ success: false, message: 'Not enough seats available' });
         }
 
-        // Check if user already booked this ride
+        // Check if user already has an active booking for this ride
         const existingBooking = await pool.request()
             .input('RideID', sql.Int, rideId)
             .input('PassengerID', sql.Int, passengerId)
-            .query("SELECT BookingID FROM Bookings WHERE RideID = @RideID AND PassengerID = @PassengerID AND Status IN ('Confirmed', 'Completed')");
+            .query("SELECT BookingID, SeatsBooked FROM Bookings WHERE RideID = @RideID AND PassengerID = @PassengerID AND Status = 'Confirmed'");
 
-        if (existingBooking.recordset.length > 0) {
-            return res.status(400).json({ success: false, message: 'You have already booked this ride' });
-        }
+        let bookingId;
+        let totalFare;
+        let additionalSeats = 0;
 
-        const totalFare = ride.PricePerSeat * seatsToBook;
-
-        // Create booking and update seats in a transaction
+        // Use transaction for both create and update operations
         const transaction = new sql.Transaction(pool);
         await transaction.begin();
 
         try {
-            // Separate request objects for each query in the transaction
-            const req1 = new sql.Request(transaction);
-            const bookingResult = await req1
-                .input('RideID', sql.Int, rideId)
-                .input('PassengerID', sql.Int, passengerId)
-                .input('SeatsBooked', sql.Int, seatsToBook)
-                .input('TotalFare', sql.Decimal(10, 2), totalFare)
-                .query(`
-                    INSERT INTO Bookings (RideID, PassengerID, SeatsBooked, TotalFare, BookingTime, Status)
-                    VALUES (@RideID, @PassengerID, @SeatsBooked, @TotalFare, GETDATE(), 'Confirmed');
-                    SELECT SCOPE_IDENTITY() AS BookingID;
-                `);
+            if (existingBooking.recordset.length > 0) {
+                // ✅ UPDATE existing booking (add more seats)
+                const currentBooking = existingBooking.recordset[0];
+                const newTotalSeats = currentBooking.SeatsBooked + seatsToBook;
+                additionalSeats = seatsToBook;
+                totalFare = ride.PricePerSeat * newTotalSeats;
 
-            const bookingId = bookingResult.recordset[0].BookingID;
+                const req1 = new sql.Request(transaction);
+                await req1
+                    .input('BookingID', sql.Int, currentBooking.BookingID)
+                    .input('SeatsBooked', sql.Int, newTotalSeats)
+                    .input('TotalFare', sql.Decimal(10, 2), totalFare)
+                    .query(`UPDATE Bookings 
+                            SET SeatsBooked = @SeatsBooked, TotalFare = @TotalFare 
+                            WHERE BookingID = @BookingID`);
 
-            const req2 = new sql.Request(transaction);
-            await req2
-                .input('RideID', sql.Int, rideId)
-                .input('SeatsBooked', sql.Int, seatsToBook)
-                .query(`UPDATE Rides SET AvailableSeats = AvailableSeats - @SeatsBooked WHERE RideID = @RideID`);
+                bookingId = currentBooking.BookingID;
 
-            await transaction.commit();
+                // Update ride available seats (only the new seats added)
+                const req2 = new sql.Request(transaction);
+                await req2
+                    .input('RideID', sql.Int, rideId)
+                    .input('SeatsToAdd', sql.Int, seatsToBook)
+                    .query(`UPDATE Rides SET AvailableSeats = AvailableSeats - @SeatsToAdd WHERE RideID = @RideID`);
 
-            res.status(201).json({
-                success: true,
-                message: 'Booking confirmed!',
-                bookingId: bookingId,
-                totalFare: totalFare
-            });
+                await transaction.commit();
+
+                res.status(200).json({
+                    success: true,
+                    message: `Added ${seatsToBook} more seat(s) to your booking. Total: ${newTotalSeats} seats`,
+                    bookingId: bookingId,
+                    totalFare: totalFare,
+                    additionalSeats: additionalSeats,
+                    isUpdate: true
+                });
+
+            } else {
+                // ✅ CREATE new booking
+                totalFare = ride.PricePerSeat * seatsToBook;
+
+                const req1 = new sql.Request(transaction);
+                const bookingResult = await req1
+                    .input('RideID', sql.Int, rideId)
+                    .input('PassengerID', sql.Int, passengerId)
+                    .input('SeatsBooked', sql.Int, seatsToBook)
+                    .input('TotalFare', sql.Decimal(10, 2), totalFare)
+                    .query(`
+                        INSERT INTO Bookings (RideID, PassengerID, SeatsBooked, TotalFare, BookingTime, Status)
+                        VALUES (@RideID, @PassengerID, @SeatsBooked, @TotalFare, GETDATE(), 'Confirmed');
+                        SELECT SCOPE_IDENTITY() AS BookingID;
+                    `);
+
+                bookingId = bookingResult.recordset[0].BookingID;
+
+                const req2 = new sql.Request(transaction);
+                await req2
+                    .input('RideID', sql.Int, rideId)
+                    .input('SeatsBooked', sql.Int, seatsToBook)
+                    .query(`UPDATE Rides SET AvailableSeats = AvailableSeats - @SeatsBooked WHERE RideID = @RideID`);
+
+                await transaction.commit();
+
+                res.status(201).json({
+                    success: true,
+                    message: 'Booking confirmed!',
+                    bookingId: bookingId,
+                    totalFare: totalFare,
+                    additionalSeats: 0,
+                    isUpdate: false
+                });
+            }
 
         } catch (err) {
             await transaction.rollback();

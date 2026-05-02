@@ -115,4 +115,28 @@ router.get('/booking/:bookingId', auth, async (req, res) => {
     }
 });
 
+// GET /api/payments/my — Get all payments made by logged in user
+router.get('/my', auth, async (req, res) => {
+    try {
+        const passengerId = req.user.userId;
+        const pool = getPool();
+
+        const result = await pool.request()
+            .input('PassengerID', sql.Int, passengerId)
+            .query(`
+                SELECT p.PaymentID, p.Amount, p.PaymentMethod,
+                       p.TransactionStatus, p.TransactionID, p.Timestamp
+                FROM Payments p
+                JOIN Bookings b ON p.BookingID = b.BookingID
+                WHERE b.PassengerID = @PassengerID
+                ORDER BY p.Timestamp DESC
+            `);
+
+        res.json({ success: true, data: result.recordset });
+    } catch (error) {
+        console.error('Get payments error:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
 module.exports = router;

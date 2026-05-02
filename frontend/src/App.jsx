@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoutes';
 import Profile from './pages/profile';
 import MyBookings from './pages/MyBookings';
 import Payment from './pages/Payment';
+import Wallet from './pages/Wallet';
 
 // Aliza's pages
 import CreateRide from './pages/CreateRide';
@@ -49,6 +50,13 @@ function App() {
         <Route path="/payment" element={
           <ProtectedRoute>
             <Payment />
+          </ProtectedRoute>
+        } />
+
+        {/* Wallet route */}
+        <Route path="/wallet" element={
+          <ProtectedRoute>
+            <Wallet />
           </ProtectedRoute>
         } />
 

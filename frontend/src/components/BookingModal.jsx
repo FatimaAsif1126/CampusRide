@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const BookingModal = ({ ride, isOpen, onClose }) => {
-    const navigate = useNavigate();  // ✅ MOVED INSIDE component
     const [seatsToBook, setSeatsToBook] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     if (!isOpen || !ride) return null;
 
@@ -14,7 +14,6 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
         setError(null);
 
         const token = localStorage.getItem('token');
-
         if (!token) {
             setError('You are not logged in. Please log in first.');
             setLoading(false);
@@ -38,6 +37,7 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
 
             if (response.ok && data.success) {
                 onClose();
+                // Redirect to payment page
                 navigate('/payment', {
                     state: {
                         bookingId: data.bookingId,
@@ -57,72 +57,85 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
-            <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
-                <h2 className="text-2xl font-bold mb-2 text-gray-800">Book Ride</h2>
-                <p className="text-gray-500 mb-6">
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+            display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50 }}>
+            <div style={{ background: 'white', borderRadius: 24, padding: 32,
+                width: '100%', maxWidth: 420, margin: '0 16px', boxShadow: '0 25px 60px rgba(0,0,0,0.3)' }}>
+
+                {/* Header */}
+                <h2 style={{ fontSize: 22, fontWeight: 700, color: '#111', margin: '0 0 4px' }}>
+                    Book Ride
+                </h2>
+                <p style={{ fontSize: 13, color: '#888', margin: '0 0 20px' }}>
                     {ride.Source} → {ride.Destination}
                 </p>
 
-                <div className="bg-gray-50 rounded-xl p-4 mb-6 space-y-2">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Driver</span>
-                        <span className="font-medium">{ride.DriverName}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Available Seats</span>
-                        <span className="font-medium">{ride.AvailableSeats}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Price per Seat</span>
-                        <span className="font-medium">Rs. {ride.PricePerSeat}</span>
-                    </div>
+                {/* Ride info */}
+                <div style={{ background: '#f8f7ff', borderRadius: 14, padding: '14px 16px', marginBottom: 20 }}>
+                    {[
+                        ['Driver', ride.DriverName],
+                        ['Available Seats', ride.AvailableSeats],
+                        ['Price per Seat', `Rs. ${ride.PricePerSeat}`],
+                    ].map(([label, value]) => (
+                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between',
+                            fontSize: 13, padding: '4px 0', color: '#555' }}>
+                            <span style={{ color: '#999' }}>{label}</span>
+                            <span style={{ fontWeight: 600, color: '#333' }}>{value}</span>
+                        </div>
+                    ))}
                 </div>
 
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Seats to Book</label>
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setSeatsToBook(prev => Math.max(1, prev - 1))}
-                            className="w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 text-xl font-bold flex items-center justify-center"
-                        >
-                            −
-                        </button>
-                        <span className="text-2xl font-bold w-8 text-center text-purple-600">{seatsToBook}</span>
-                        <button
-                            onClick={() => setSeatsToBook(prev => Math.min(ride.AvailableSeats, prev + 1))}
-                            className="w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300 text-xl font-bold flex items-center justify-center"
-                        >
-                            +
-                        </button>
-                    </div>
+                {/* Seat selector */}
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#333', margin: '0 0 10px' }}>
+                    Seats to Book
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                    <button onClick={() => setSeatsToBook(prev => Math.max(1, prev - 1))}
+                        style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #e5e7eb',
+                            background: '#f9fafb', fontSize: 20, cursor: 'pointer', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', color: '#555' }}>
+                        −
+                    </button>
+                    <span style={{ fontSize: 26, fontWeight: 700, color: '#7C3AED', minWidth: 32, textAlign: 'center' }}>
+                        {seatsToBook}
+                    </span>
+                    <button onClick={() => setSeatsToBook(prev => Math.min(ride.AvailableSeats, prev + 1))}
+                        style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #e5e7eb',
+                            background: '#f9fafb', fontSize: 20, cursor: 'pointer', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', color: '#555' }}>
+                        +
+                    </button>
                 </div>
 
-                <div className="flex justify-between items-center mb-6 p-4 bg-purple-50 rounded-xl">
-                    <span className="text-gray-600 font-medium">Total Estimated</span>
-                    <span className="text-2xl font-bold text-purple-600">
+                {/* Total */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: '#f5f3ff', borderRadius: 14, padding: '14px 18px', marginBottom: 16 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#555' }}>Total Estimated</span>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: '#7C3AED' }}>
                         Rs. {ride.PricePerSeat * seatsToBook}
                     </span>
                 </div>
 
+                {/* Error */}
                 {error && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-red-600 text-sm">{error}</p>
+                    <div style={{ background: '#fef2f2', border: '1px solid #fecaca',
+                        borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+                        <p style={{ color: '#dc2626', fontSize: 13, margin: 0 }}>{error}</p>
                     </div>
                 )}
 
-                <div className="flex gap-3">
-                    <button
-                        onClick={onClose}
-                        className="flex-1 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors"
-                    >
+                {/* Buttons */}
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={onClose}
+                        style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none',
+                            background: '#f3f4f6', color: '#555', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                         Cancel
                     </button>
-                    <button
-                        onClick={handleBook}
-                        disabled={loading}
-                        className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white font-semibold transition-colors"
-                    >
+                    <button onClick={handleBook} disabled={loading}
+                        style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none',
+                            background: loading ? '#c4b5fd' : '#7C3AED', color: 'white',
+                            fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+                            transition: 'background 0.15s' }}>
                         {loading ? 'Booking...' : 'Confirm Booking'}
                     </button>
                 </div>
