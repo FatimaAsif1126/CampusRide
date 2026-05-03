@@ -4,36 +4,103 @@ import { X } from 'lucide-react';
 function getAvatarConfig(user) {
     const role = (user.role || '').toLowerCase();
     const gender = (user.gender || '').toLowerCase();
+if ((role === 'driver' || role === 'both') && (gender === 'f' || gender === 'female' || gender === 'woman')) {
+    return {
+        svg: (
+            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                <circle cx="60" cy="60" r="60" fill="#1e1a2e" />
+                {/* Body / jacket */}
+                <path d="M26 120 Q28 90 42 84 Q48 94 60 94 Q72 94 78 84 Q92 90 94 120Z" fill="#1c1917" />
+                <path d="M50 84 Q60 92 70 84 L66 76 Q60 82 54 76Z" fill="#292524" />
+                <path d="M57 76 L60 84 L63 76 Z" fill="#e7e5e4" />
+                {/* Neck */}
+                <rect x="55" y="72" width="10" height="13" rx="5" fill="#fcd5b0" />
+                {/* Head */}
+                <circle cx="60" cy="52" r="22" fill="#fcd5b0" />
+                {/* Long hair sides */}
+                <path d="M38 50 Q36 72 40 88 Q44 76 42 64 Q40 56 38 50Z" fill="#1c1917" />
+                <path d="M82 50 Q84 72 80 88 Q76 76 78 64 Q80 56 82 50Z" fill="#1c1917" />
+                {/* === CHAUFFEUR HAT === */}
+                <rect x="30" y="40" width="60" height="5" rx="2.5" fill="#111" />
+                <rect x="36" y="20" width="48" height="22" rx="5" fill="#1a1a1a" />
+                <rect x="36" y="36" width="48" height="5" rx="0" fill="#111" />
+                <rect x="36" y="37.5" width="48" height="2" rx="0" fill="#d4a017" />
+                <rect x="38" y="22" width="44" height="3" rx="2" fill="#2a2a2a" />
+                <circle cx="60" cy="29" r="4" fill="#d4a017" />
+                <circle cx="60" cy="29" r="2.5" fill="#111" />
+                <circle cx="60" cy="29" r="1" fill="#d4a017" />
+                {/* Hair peeking under hat */}
+                <path d="M36 44 Q34 50 36 56" stroke="#1c1917" strokeWidth="4" fill="none" strokeLinecap="round" />
+                <path d="M84 44 Q86 50 84 56" stroke="#1c1917" strokeWidth="4" fill="none" strokeLinecap="round" />
+                {/* Eyes */}
+                <ellipse cx="52" cy="57" rx="3" ry="3.5" fill="#1c1917" />
+                <ellipse cx="68" cy="57" rx="3" ry="3.5" fill="#1c1917" />
+                <circle cx="53" cy="55.5" r="1" fill="white" />
+                <circle cx="69" cy="55.5" r="1" fill="white" />
+                {/* Lashes */}
+                <path d="M49 54 L47 52M52 53 L51 51M55 54 L55 52" stroke="#1c1917" strokeWidth="1" strokeLinecap="round" />
+                <path d="M65 54 L63 52M68 53 L67 51M71 54 L71 52" stroke="#1c1917" strokeWidth="1" strokeLinecap="round" />
+                {/* Eyebrows */}
+                <path d="M49 52 Q52 50.5 55 52" stroke="#1c1917" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+                <path d="M65 52 Q68 50.5 71 52" stroke="#1c1917" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+                {/* Smile */}
+                <path d="M53 65 Q60 71 67 65" stroke="#c2855a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                {/* Earrings */}
+                <circle cx="38" cy="60" r="2" fill="#d4a017" />
+                <circle cx="82" cy="60" r="2" fill="#d4a017" />
+            </svg>
+        ),
+        label: 'Driver',
+        accent: 'from-violet-600 to-purple-800',
+        badge: 'bg-violet-500/20 text-violet-300 border border-violet-500/30',
+    };
+}
 
-    if (role === 'driver' || role === 'ride') {
-        return {
-            svg: (
-                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                    <circle cx="60" cy="60" r="60" fill="#1e1a2e" />
-                    <ellipse cx="60" cy="105" rx="34" ry="22" fill="#6d28d9" />
-                    <path d="M48 90 Q60 100 72 90 L68 82 Q60 88 52 82 Z" fill="#4c1d95" />
-                    <circle cx="60" cy="52" r="22" fill="#fcd5b0" />
-                    <path d="M38 48 Q38 28 60 26 Q82 28 82 48 Q78 36 60 36 Q42 36 38 48Z" fill="#1c1917" />
-                    <rect x="36" y="42" width="48" height="8" rx="4" fill="#7c3aed" />
-                    <rect x="32" y="44" width="56" height="5" rx="2.5" fill="#6d28d9" />
-                    <ellipse cx="52" cy="53" rx="3" ry="3.5" fill="#1c1917" />
-                    <ellipse cx="68" cy="53" rx="3" ry="3.5" fill="#1c1917" />
-                    <circle cx="53" cy="51.5" r="1" fill="white" />
-                    <circle cx="69" cy="51.5" r="1" fill="white" />
-                    <path d="M53 62 Q60 68 67 62" stroke="#c2855a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                    <circle cx="60" cy="95" r="14" stroke="#a78bfa" strokeWidth="3" fill="none" />
-                    <circle cx="60" cy="95" r="4" fill="#a78bfa" />
-                    <line x1="60" y1="81" x2="60" y2="91" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round" />
-                    <line x1="60" y1="99" x2="60" y2="109" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round" />
-                    <line x1="46" y1="95" x2="56" y2="95" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round" />
-                    <line x1="64" y1="95" x2="74" y2="95" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round" />
-                </svg>
-            ),
-            label: 'Driver',
-            accent: 'from-violet-600 to-purple-800',
-            badge: 'bg-violet-500/20 text-violet-300 border border-violet-500/30',
-        };
-    }
+if (role === 'driver' || role === 'both') {
+    return {
+        svg: (
+            <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                <circle cx="60" cy="60" r="60" fill="#1e1a2e" />
+                {/* Body / jacket */}
+                <path d="M26 120 Q28 90 42 84 Q48 94 60 94 Q72 94 78 84 Q92 90 94 120Z" fill="#1c1917" />
+                <path d="M50 84 Q60 92 70 84 L66 76 Q60 82 54 76Z" fill="#292524" />
+                <path d="M57 76 L60 84 L63 76 Z" fill="#e7e5e4" />
+                {/* Neck */}
+                <rect x="55" y="72" width="10" height="13" rx="5" fill="#fcd5b0" />
+                {/* Head */}
+                <circle cx="60" cy="52" r="22" fill="#fcd5b0" />
+                {/* Ears */}
+                <ellipse cx="38" cy="53" rx="3" ry="4" fill="#f5c49a" />
+                <ellipse cx="82" cy="53" rx="3" ry="4" fill="#f5c49a" />
+                {/* Hair peeking under hat */}
+                <path d="M39 47 Q39 42 44 40" stroke="#1c1917" strokeWidth="3" fill="none" strokeLinecap="round" />
+                <path d="M81 47 Q81 42 76 40" stroke="#1c1917" strokeWidth="3" fill="none" strokeLinecap="round" />
+                {/* === CHAUFFEUR HAT === */}
+                <rect x="30" y="40" width="60" height="5" rx="2.5" fill="#111" />
+                <rect x="36" y="20" width="48" height="22" rx="5" fill="#1a1a1a" />
+                <rect x="36" y="36" width="48" height="5" rx="0" fill="#111" />
+                <rect x="36" y="37.5" width="48" height="2" rx="0" fill="#d4a017" />
+                <rect x="38" y="22" width="44" height="3" rx="2" fill="#2a2a2a" />
+                <circle cx="60" cy="29" r="4" fill="#d4a017" />
+                <circle cx="60" cy="29" r="2.5" fill="#111" />
+                <circle cx="60" cy="29" r="1" fill="#d4a017" />
+                {/* Eyes */}
+                <ellipse cx="52" cy="57" rx="3" ry="3.5" fill="#1c1917" />
+                <ellipse cx="68" cy="57" rx="3" ry="3.5" fill="#1c1917" />
+                <circle cx="53" cy="55.5" r="1" fill="white" />
+                <circle cx="69" cy="55.5" r="1" fill="white" />
+                {/* Eyebrows */}
+                <path d="M49 52 Q52 50.5 55 52" stroke="#1c1917" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+                <path d="M65 52 Q68 50.5 71 52" stroke="#1c1917" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+                {/* Smile */}
+                <path d="M53 65 Q60 71 67 65" stroke="#c2855a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            </svg>
+        ),
+        label: 'Driver',
+        accent: 'from-violet-600 to-purple-800',
+        badge: 'bg-violet-500/20 text-violet-300 border border-violet-500/30',
+    };
+}
 
     if (gender === 'female' || gender === 'woman' || gender === 'f') {
         return {

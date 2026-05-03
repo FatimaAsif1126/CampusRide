@@ -201,4 +201,83 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
+// PUT /api/rides/:id/complete - Mark ride as completed by driver
+router.put('/:id/complete', auth, async (req, res) => {
+    try {
+        const rideId = req.params.id;
+        const driverId = req.user.userId;
+        const pool = getPool();
+        
+        // Check if ride exists and belongs to driver
+        const rideCheck = await pool.request()
+            .input('RideID', sql.Int, rideId)
+            .input('DriverID', sql.Int, driverId)
+            .query(`
+                SELECT r.RideID, r.Source, r.Destination, r.Status, r.DepartureTime
+                FROM Rides r
+                WHERE r.RideID = @RideID AND r.DriverID = @DriverID
+            `);
+        
+        if (rideCheck.recordset.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Ride not found or not owned by you' 
+            });
+        }
+        
+        const ride = rideCheck.recordset[0];
+        
+        if (ride.Status === 'Completed') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Ride is already marked as completed' 
+            });
+        }
+        
+        if (ride.Status === 'Cancelled') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Cannot complete a cancelled ride' 
+            });
+        }
+        
+        // Update ride status to Completed
+        await pool.request()
+            .input('RideID', sql.Int, rideId)
+            .query(`UPDATE Rides SET Status = 'Completed' WHERE RideID = @RideID`);
+        
+        // Get all passengers who booked this ride
+        const passengers = await pool.request()
+            .input('RideID', sql.Int, rideId)
+            .query(`
+                SELECT DISTINCT b.PassengerID, u.Name
+                FROM Bookings b
+                JOIN Users u ON b.PassengerID = u.UserID
+                WHERE b.RideID = @RideID AND b.Status = 'Confirmed'
+            `);
+        
+        // Create notification for each passenger
+        for (const passenger of passengers.recordset) {
+            await pool.request()
+                .input('UserID', sql.Int, passenger.PassengerID)
+                .input('Type', sql.NVarChar, 'RideUpdate')
+                .input('Message', sql.NVarChar, 
+                    `✅ Ride completed: ${ride.Source} → ${ride.Destination}. Rate your driver now!`)
+                .query(`
+                    INSERT INTO Notifications (UserID, Type, Message, IsRead, CreatedAt)
+                    VALUES (@UserID, @Type, @Message, 0, GETDATE())
+                `);
+        }
+        
+        res.json({ 
+            success: true, 
+            message: 'Ride marked as completed!',
+            notificationsSent: passengers.recordset.length
+        });
+        
+    } catch (error) {
+        console.error('Complete ride error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 module.exports = router;

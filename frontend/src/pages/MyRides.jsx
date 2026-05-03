@@ -38,7 +38,27 @@ function MyRides() {
             }
         } catch (e) { console.error(e); }
     };
-
+const handleComplete = async (rideId) => {
+    if (!window.confirm('Mark this ride as completed? Passengers will be notified to leave reviews.')) return;
+    
+    try {
+        const res = await fetch(`http://localhost:5000/api/rides/${rideId}/complete`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            alert(`✅ Ride marked as completed! ${data.notificationsSent} passenger(s) notified`);
+            fetchRides(); // Refresh the list
+        } else {
+            alert(data.message || 'Failed to complete ride');
+        }
+    } catch (e) { 
+        console.error(e);
+        alert('Failed to connect to server');
+    }
+};
     const statusColor = (status) => {
         if (status === 'Active') return { color: '#34d399', bg: 'rgba(52,211,153,0.1)', border: 'rgba(52,211,153,0.2)' };
         if (status === 'Full') return { color: '#fbbf24', bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.2)' };
@@ -169,28 +189,44 @@ function MyRides() {
                                     </div>
 
                                     {/* Action buttons */}
-                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                                        {r.Status === 'Active' && (
-                                            <button className="edit-btn"
-                                                onClick={() => navigate(`/edit-ride/${r.RideID}`)}
-                                                style={{ padding: '8px 18px', borderRadius: 10, cursor: 'pointer',
-                                                    background: 'rgba(139,92,246,0.12)',
-                                                    border: '1px solid rgba(139,92,246,0.25)',
-                                                    color: '#a78bfa', fontSize: 12, fontWeight: 500,
-                                                    fontFamily: "'Sora', sans-serif" }}>
-                                                Edit
-                                            </button>
-                                        )}
-                                        <button className="del-btn"
-                                            onClick={() => handleDelete(r.RideID)}
-                                            style={{ padding: '8px 18px', borderRadius: 10, cursor: 'pointer',
-                                                background: 'rgba(239,68,68,0.1)',
-                                                border: '1px solid rgba(239,68,68,0.3)',
-                                                color: '#f87171', fontSize: 12, fontWeight: 500,
-                                                fontFamily: "'Sora', sans-serif" }}>
-                                            Delete
-                                        </button>
-                                    </div>
+                                   {/* Action buttons */}
+<div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+    {r.Status === 'Active' && (
+        <button className="edit-btn"
+            onClick={() => navigate(`/edit-ride/${r.RideID}`)}
+            style={{ padding: '8px 18px', borderRadius: 10, cursor: 'pointer',
+                background: 'rgba(139,92,246,0.12)',
+                border: '1px solid rgba(139,92,246,0.25)',
+                color: '#a78bfa', fontSize: 12, fontWeight: 500,
+                fontFamily: "'Sora', sans-serif" }}>
+            Edit
+        </button>
+    )}
+    
+    {/* NEW "Mark Completed" button - only shows for Active rides that have already passed */}
+   {/* Mark Completed button - only for Active rides with bookings AND time has passed */}
+{r.Status === 'Active' && r.BookingsCount > 0  && (
+        <button 
+            onClick={() => handleComplete(r.RideID)}
+            style={{ padding: '8px 18px', borderRadius: 10, cursor: 'pointer',
+                background: 'rgba(52,211,153,0.1)',
+                border: '1px solid rgba(52,211,153,0.3)',
+                color: '#34d399', fontSize: 12, fontWeight: 500,
+                fontFamily: "'Sora', sans-serif" }}>
+            ✓ Mark Completed
+        </button>
+    )}
+    
+    <button className="del-btn"
+        onClick={() => handleDelete(r.RideID)}
+        style={{ padding: '8px 18px', borderRadius: 10, cursor: 'pointer',
+            background: 'rgba(239,68,68,0.1)',
+            border: '1px solid rgba(239,68,68,0.3)',
+            color: '#f87171', fontSize: 12, fontWeight: 500,
+            fontFamily: "'Sora', sans-serif" }}>
+        Delete
+    </button>
+</div>
                                 </div>
                             );
                         })}
