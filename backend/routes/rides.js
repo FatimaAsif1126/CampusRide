@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { sql, getPool } = require('../config/db');
-const auth = require('../middleware/authMiddleware');  // ADD THIS
+const auth = require('../middleware/authMiddleware');
 
 // GET - Search rides (no auth needed)
 router.get('/', async (req, res) => {
@@ -46,7 +46,33 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET - Get single ride (no auth needed)
+// ✅ NEW — GET /api/rides/my — Driver's own rides
+router.get('/my', auth, async (req, res) => {
+    try {
+        const driverId = req.user.userId;
+        const pool = getPool();
+
+        const result = await pool.request()
+            .input('DriverID', sql.Int, driverId)
+            .query(`
+                SELECT r.RideID, r.DriverID, r.Source, r.Destination,
+                       r.DepartureTime, r.AvailableSeats, r.PricePerSeat, r.Status,
+                       v.Make as VehicleMake, v.Model as VehicleModel, v.Color as VehicleColor,
+                       (SELECT COUNT(*) FROM Bookings b WHERE b.RideID = r.RideID AND b.Status = 'Confirmed') as BookingsCount
+                FROM Rides r
+                LEFT JOIN Vehicles v ON r.VehicleID = v.VehicleID
+                WHERE r.DriverID = @DriverID
+                ORDER BY r.DepartureTime DESC
+            `);
+
+        res.json({ success: true, data: result.recordset });
+    } catch (error) {
+        console.error('My rides error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET - Get single ride (no auth needed) — MUST be after /my
 router.get('/:id', async (req, res) => {
     try {
         const rideId = req.params.id;
@@ -72,15 +98,9 @@ router.get('/:id', async (req, res) => {
 
         const ride = rideResult.recordset[0];
 
-        const waypointsQuery = `
-            SELECT * FROM Routes
-            WHERE RideID = @id
-            ORDER BY WaypointOrder
-        `;
-        
         const waypointsResult = await pool.request()
             .input('id', sql.Int, rideId)
-            .query(waypointsQuery);
+            .query(`SELECT * FROM Routes WHERE RideID = @id ORDER BY WaypointOrder`);
 
         res.json({ success: true, data: { ...ride, waypoints: waypointsResult.recordset } });
     } catch (error) {
@@ -88,15 +108,14 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST - Create a new ride (WITH AUTH)
+// POST - Create a new ride
 router.post('/', auth, async (req, res) => {
     try {
         const { source, destination, departureTime, availableSeats, pricePerSeat, vehicleId } = req.body;
-        const driverId = req.user.userId || req.user.UserID; // Get driver ID from token
-        
+        const driverId = req.user.userId || req.user.UserID;
         const pool = getPool();
         
-        const result = await pool.request()
+        await pool.request()
             .input('DriverID', sql.Int, driverId)
             .input('VehicleID', sql.Int, vehicleId)
             .input('Source', sql.VarChar, source)
@@ -110,26 +129,21 @@ router.post('/', auth, async (req, res) => {
                 VALUES (@DriverID, @VehicleID, @Source, @Destination, @DepartureTime, @AvailableSeats, @PricePerSeat, @Status)
             `);
         
-        res.status(201).json({
-            success: true,
-            message: 'Ride created successfully'
-        });
+        res.status(201).json({ success: true, message: 'Ride created successfully' });
     } catch (error) {
         console.error('Create ride error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// PUT - Update a ride (WITH AUTH)
+// PUT - Update a ride
 router.put('/:id', auth, async (req, res) => {
     try {
         const rideId = req.params.id;
         const { source, destination, departureTime, availableSeats, pricePerSeat } = req.body;
         const driverId = req.user.userId || req.user.UserID;
-        
         const pool = getPool();
         
-        // First check if ride exists and belongs to this driver
         const checkRide = await pool.request()
             .input('RideID', sql.Int, rideId)
             .input('DriverID', sql.Int, driverId)
@@ -153,25 +167,20 @@ router.put('/:id', auth, async (req, res) => {
                 WHERE RideID = @RideID
             `);
         
-        res.status(200).json({
-            success: true,
-            message: `Ride ${rideId} updated successfully`
-        });
+        res.status(200).json({ success: true, message: `Ride ${rideId} updated successfully` });
     } catch (error) {
         console.error('Update ride error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// DELETE - Delete a ride (WITH AUTH)
+// DELETE - Delete a ride
 router.delete('/:id', auth, async (req, res) => {
     try {
         const rideId = req.params.id;
         const driverId = req.user.userId || req.user.UserID;
-        
         const pool = getPool();
         
-        // First check if ride exists and belongs to this driver
         const checkRide = await pool.request()
             .input('RideID', sql.Int, rideId)
             .input('DriverID', sql.Int, driverId)
@@ -185,10 +194,7 @@ router.delete('/:id', auth, async (req, res) => {
             .input('RideID', sql.Int, rideId)
             .query('DELETE FROM Rides WHERE RideID = @RideID');
         
-        res.status(200).json({
-            success: true,
-            message: `Ride ${rideId} deleted successfully`
-        });
+        res.status(200).json({ success: true, message: `Ride ${rideId} deleted successfully` });
     } catch (error) {
         console.error('Delete ride error:', error);
         res.status(500).json({ success: false, error: error.message });

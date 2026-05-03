@@ -8,6 +8,8 @@ import Profile from './pages/profile';
 import MyBookings from './pages/MyBookings';
 import Payment from './pages/Payment';
 import Wallet from './pages/Wallet';
+import Reviews from './pages/Reviews';
+import Notifications from './pages/Notifications';
 
 // Aliza's pages
 import CreateRide from './pages/CreateRide';
@@ -57,6 +59,20 @@ function App() {
         <Route path="/wallet" element={
           <ProtectedRoute>
             <Wallet />
+          </ProtectedRoute>
+        } />
+
+        {/* Reviews route */}
+        <Route path="/reviews" element={
+          <ProtectedRoute>
+            <Reviews />
+          </ProtectedRoute>
+        } />
+
+        {/* Notifications route */}
+        <Route path="/notifications" element={
+          <ProtectedRoute>
+            <Notifications />
           </ProtectedRoute>
         } />
 
