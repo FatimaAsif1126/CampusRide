@@ -3,53 +3,58 @@ const router = express.Router();
 const { sql, getPool } = require('../config/db');
 const auth = require('../middleware/authMiddleware');
 
-// POST /api/bookings - Create or update a booking (add more seats)
+// Helper: insert notification without crashing main flow
+const insertNotification = async (userId, type, message) => {
+    try {
+        const pool = getPool();
+        await pool.request()
+            .input('UserID', sql.Int, userId)
+            .input('Type', sql.NVarChar, type)
+            .input('Message', sql.NVarChar, message)
+            .query(`INSERT INTO Notifications (UserID, Type, Message, IsRead, CreatedAt)
+                    VALUES (@UserID, @Type, @Message, 0, GETDATE())`);
+    } catch (err) {
+        console.error('Notification failed:', err.message);
+    }
+};
+
+// POST /api/bookings
 router.post('/', auth, async (req, res) => {
     try {
         const { rideId, seatsToBook } = req.body;
         const passengerId = req.user.userId || req.user.UserID;
-
         const pool = getPool();
 
-        // Check ride availability
         const rideResult = await pool.request()
             .input('RideID', sql.Int, rideId)
-            .query('SELECT AvailableSeats, PricePerSeat, Status, DriverID FROM Rides WHERE RideID = @RideID');
+            .query('SELECT AvailableSeats, PricePerSeat, Status, DriverID, Source, Destination FROM Rides WHERE RideID = @RideID');
 
-        if (rideResult.recordset.length === 0) {
+        if (rideResult.recordset.length === 0)
             return res.status(404).json({ success: false, message: 'Ride not found' });
-        }
 
         const ride = rideResult.recordset[0];
 
-        if (ride.Status !== 'Active') {
+        if (ride.Status !== 'Active')
             return res.status(400).json({ success: false, message: 'Ride is no longer active' });
-        }
 
-        if (ride.AvailableSeats < seatsToBook) {
+        if (ride.AvailableSeats < seatsToBook)
             return res.status(400).json({ success: false, message: 'Not enough seats available' });
-        }
 
-        // Check if user already has an active booking for this ride
         const existingBooking = await pool.request()
             .input('RideID', sql.Int, rideId)
             .input('PassengerID', sql.Int, passengerId)
             .query("SELECT BookingID, SeatsBooked FROM Bookings WHERE RideID = @RideID AND PassengerID = @PassengerID AND Status = 'Confirmed'");
 
-        let bookingId;
-        let totalFare;
-        let additionalSeats = 0;
+        let bookingId, totalFare;
 
-        // Use transaction for both create and update operations
         const transaction = new sql.Transaction(pool);
         await transaction.begin();
 
         try {
             if (existingBooking.recordset.length > 0) {
-                // ✅ UPDATE existing booking (add more seats)
+                // UPDATE existing booking
                 const currentBooking = existingBooking.recordset[0];
                 const newTotalSeats = currentBooking.SeatsBooked + seatsToBook;
-                additionalSeats = seatsToBook;
                 totalFare = ride.PricePerSeat * newTotalSeats;
 
                 const req1 = new sql.Request(transaction);
@@ -57,13 +62,10 @@ router.post('/', auth, async (req, res) => {
                     .input('BookingID', sql.Int, currentBooking.BookingID)
                     .input('SeatsBooked', sql.Int, newTotalSeats)
                     .input('TotalFare', sql.Decimal(10, 2), totalFare)
-                    .query(`UPDATE Bookings 
-                            SET SeatsBooked = @SeatsBooked, TotalFare = @TotalFare 
-                            WHERE BookingID = @BookingID`);
+                    .query(`UPDATE Bookings SET SeatsBooked = @SeatsBooked, TotalFare = @TotalFare WHERE BookingID = @BookingID`);
 
                 bookingId = currentBooking.BookingID;
 
-                // Update ride available seats (only the new seats added)
                 const req2 = new sql.Request(transaction);
                 await req2
                     .input('RideID', sql.Int, rideId)
@@ -72,17 +74,20 @@ router.post('/', auth, async (req, res) => {
 
                 await transaction.commit();
 
-                res.status(200).json({
+                // Notifications
+                await insertNotification(passengerId, 'Booking',
+                    `You added ${seatsToBook} more seat(s) on your ride from ${ride.Source} to ${ride.Destination}. Total: ${newTotalSeats} seats.`);
+                await insertNotification(ride.DriverID, 'Booking',
+                    `A passenger added ${seatsToBook} more seat(s) on your ride from ${ride.Source} to ${ride.Destination}.`);
+
+                return res.status(200).json({
                     success: true,
-                    message: `Added ${seatsToBook} more seat(s) to your booking. Total: ${newTotalSeats} seats`,
-                    bookingId: bookingId,
-                    totalFare: totalFare,
-                    additionalSeats: additionalSeats,
-                    isUpdate: true
+                    message: `Added ${seatsToBook} more seat(s). Total: ${newTotalSeats} seats`,
+                    bookingId, totalFare, isUpdate: true
                 });
 
             } else {
-                // ✅ CREATE new booking
+                // CREATE new booking
                 totalFare = ride.PricePerSeat * seatsToBook;
 
                 const req1 = new sql.Request(transaction);
@@ -107,13 +112,16 @@ router.post('/', auth, async (req, res) => {
 
                 await transaction.commit();
 
-                res.status(201).json({
+                // Notifications
+                await insertNotification(passengerId, 'Booking',
+                    `Your booking is confirmed! ${seatsToBook} seat(s) on ride from ${ride.Source} to ${ride.Destination}.`);
+                await insertNotification(ride.DriverID, 'Booking',
+                    `New booking! A passenger booked ${seatsToBook} seat(s) on your ride from ${ride.Source} to ${ride.Destination}.`);
+
+                return res.status(201).json({
                     success: true,
                     message: 'Booking confirmed!',
-                    bookingId: bookingId,
-                    totalFare: totalFare,
-                    additionalSeats: 0,
-                    isUpdate: false
+                    bookingId, totalFare, isUpdate: false
                 });
             }
 
@@ -128,7 +136,7 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
-// GET /api/bookings/my - Get user's bookings
+// GET /api/bookings/my
 router.get('/my', auth, async (req, res) => {
     try {
         const passengerId = req.user.userId || req.user.UserID;
@@ -148,21 +156,19 @@ router.get('/my', auth, async (req, res) => {
             `);
 
         res.json({ success: true, data: result.recordset });
-
     } catch (error) {
         console.error('Get bookings error:', error);
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
 
-// PUT /api/bookings/:id/cancel - Cancel a booking
+// PUT /api/bookings/:id/cancel
 router.put('/:id/cancel', auth, async (req, res) => {
     try {
         const bookingId = req.params.id;
         const passengerId = req.user.userId || req.user.UserID;
         const pool = getPool();
 
-        // Get booking details
         const bookingResult = await pool.request()
             .input('BookingID', sql.Int, bookingId)
             .input('PassengerID', sql.Int, passengerId)
@@ -172,17 +178,20 @@ router.put('/:id/cancel', auth, async (req, res) => {
                 WHERE b.BookingID = @BookingID AND b.PassengerID = @PassengerID
             `);
 
-        if (bookingResult.recordset.length === 0) {
+        if (bookingResult.recordset.length === 0)
             return res.status(404).json({ success: false, message: 'Booking not found' });
-        }
 
         const booking = bookingResult.recordset[0];
 
-        if (booking.Status !== 'Confirmed') {
+        if (booking.Status !== 'Confirmed')
             return res.status(400).json({ success: false, message: 'Only confirmed bookings can be cancelled' });
-        }
 
-        // Cancel booking and restore seats in a transaction
+        // Get ride info for notification
+        const rideInfo = await pool.request()
+            .input('RideID', sql.Int, booking.RideID)
+            .query('SELECT Source, Destination, DriverID FROM Rides WHERE RideID = @RideID');
+        const ride = rideInfo.recordset[0];
+
         const transaction = new sql.Transaction(pool);
         await transaction.begin();
 
@@ -199,6 +208,13 @@ router.put('/:id/cancel', auth, async (req, res) => {
                 .query(`UPDATE Rides SET AvailableSeats = AvailableSeats + @SeatsBooked WHERE RideID = @RideID`);
 
             await transaction.commit();
+
+            // Notifications
+            await insertNotification(passengerId, 'Booking',
+                `Your booking on ride from ${ride.Source} to ${ride.Destination} has been cancelled.`);
+            await insertNotification(ride.DriverID, 'Booking',
+                `A passenger cancelled their booking on your ride from ${ride.Source} to ${ride.Destination}. ${booking.SeatsBooked} seat(s) restored.`);
+
             res.json({ success: true, message: 'Booking cancelled successfully' });
 
         } catch (err) {

@@ -3,6 +3,21 @@ const router = express.Router();
 const { sql, getPool } = require('../config/db');
 const auth = require('../middleware/authMiddleware');
 
+// Helper: insert notification
+const insertNotification = async (userId, type, message) => {
+    try {
+        const pool = getPool();
+        await pool.request()
+            .input('UserID', sql.Int, userId)
+            .input('Type', sql.NVarChar, type)
+            .input('Message', sql.NVarChar, message)
+            .query(`INSERT INTO Notifications (UserID, Type, Message, IsRead, CreatedAt)
+                    VALUES (@UserID, @Type, @Message, 0, GETDATE())`);
+    } catch (err) {
+        console.error('Notification failed:', err.message);
+    }
+};
+
 // POST /api/reviews — Submit a review
 router.post('/', auth, async (req, res) => {
     try {
@@ -29,6 +44,18 @@ router.post('/', auth, async (req, res) => {
             return res.status(400).json({ success: false, message: 'You have already reviewed this ride' });
         }
 
+        // Get ride info for notification
+        const rideInfo = await pool.request()
+            .input('RideID', sql.Int, rideId)
+            .query('SELECT Source, Destination, DriverID FROM Rides WHERE RideID = @RideID');
+        const ride = rideInfo.recordset[0];
+
+        // Get reviewee name
+        const revieweeInfo = await pool.request()
+            .input('RevieweeID', sql.Int, revieweeId)
+            .query('SELECT Name FROM Users WHERE UserID = @RevieweeID');
+        const revieweeName = revieweeInfo.recordset[0]?.Name || 'the driver';
+
         // Insert review
         await pool.request()
             .input('ReviewerID', sql.Int, reviewerId)
@@ -45,6 +72,14 @@ router.post('/', auth, async (req, res) => {
             .query(`UPDATE Users SET Rating = (
                         SELECT AVG(CAST(Rating AS DECIMAL(3,2))) FROM Reviews WHERE RevieweeID = @RevieweeID
                     ) WHERE UserID = @RevieweeID`);
+
+        // 🔔 Send notification to reviewer (confirmation)
+        await insertNotification(reviewerId, 'System',
+            `Your review for ${revieweeName} has been submitted. Rating: ${rating}/5. Ride: ${ride.Source} → ${ride.Destination}`);
+
+        // 🔔 Send notification to reviewee (someone reviewed them)
+        await insertNotification(revieweeId, 'System',
+            `You received a ${rating}/5 rating from a passenger after the ride from ${ride.Source} → ${ride.Destination}.`);
 
         res.status(201).json({ success: true, message: 'Review submitted!' });
     } catch (error) {

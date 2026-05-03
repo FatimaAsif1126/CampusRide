@@ -9,7 +9,7 @@ function Wallet() {
 
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [balance, setBalance] = useState(2500); // simulated balance
+    const [balance, setBalance] = useState(0); // ← starts at 0, loads from DB
     const [addAmount, setAddAmount] = useState('');
     const [adding, setAdding] = useState(false);
     const [showAdd, setShowAdd] = useState(false);
@@ -17,6 +17,7 @@ function Wallet() {
 
     useEffect(() => {
         fetchTransactions();
+        fetchBalance();
     }, []);
 
     const fetchTransactions = async () => {
@@ -33,29 +34,53 @@ function Wallet() {
         }
     };
 
+    const fetchBalance = async () => {
+        try {
+            const res = await fetch('http://localhost:5000/api/payments/wallet', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) setBalance(data.balance);
+        } catch (e) { 
+            console.error(e); 
+        }
+    };
+
     const handleAddMoney = async () => {
         const amount = parseInt(addAmount);
-        if (!amount || amount < 100) {
-            alert('Minimum top-up is Rs. 100');
-            return;
+        if (!amount || amount < 100) { 
+            alert('Minimum top-up is Rs. 100'); 
+            return; 
         }
         setAdding(true);
-        await new Promise(r => setTimeout(r, 1500)); // simulate processing
-        setBalance(prev => prev + amount);
-        setTransactions(prev => [{
-            PaymentID: Date.now(),
-            PaymentMethod: 'In-App Wallet',
-            Amount: amount,
-            TransactionStatus: 'Completed',
-            TransactionID: 'TOP-' + Date.now().toString().slice(-6),
-            Timestamp: new Date().toISOString(),
-            type: 'credit'
-        }, ...prev]);
-        setAddAmount('');
-        setShowAdd(false);
-        setAdding(false);
-        setSuccess(`Rs. ${amount} added to your wallet!`);
-        setTimeout(() => setSuccess(''), 3000);
+        
+        try {
+            const res = await fetch('http://localhost:5000/api/payments/wallet/topup', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ amount })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                setBalance(data.newBalance);  // ← real balance from DB
+                setAddAmount('');
+                setShowAdd(false);
+                setSuccess(`Rs. ${amount} added to your wallet!`);
+                setTimeout(() => setSuccess(''), 3000);
+                fetchTransactions(); // refresh history
+            } else {
+                alert(data.message || 'Top-up failed');
+            }
+        } catch (e) { 
+            console.error(e); 
+            alert('Failed to add money. Please try again.');
+        } finally { 
+            setAdding(false); 
+        }
     };
 
     const quickAmounts = [500, 1000, 2000, 5000];
@@ -194,8 +219,8 @@ function Wallet() {
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className={`text-base font-semibold ${t.type === 'credit' ? 'text-green-400' : 'text-red-400'}`}>
-                                            {t.type === 'credit' ? '+' : '-'} Rs. {t.Amount}
+                                        <p className="text-base font-semibold text-green-400">
+                                            + Rs. {t.Amount}
                                         </p>
                                         <span className="text-xs px-2 py-0.5 rounded-full"
                                               style={{ background: 'rgba(52,211,153,0.1)', color: '#34d399' }}>
