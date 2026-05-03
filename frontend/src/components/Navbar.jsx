@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, User, Calendar, Search, Wallet } from 'lucide-react';
+import { LogOut, User, Calendar, Search, Wallet, LayoutDashboard } from 'lucide-react';
 
 function Navbar() {
     const navigate = useNavigate();
@@ -31,6 +31,11 @@ function Navbar() {
 
                 {/* Center nav links */}
                 <div className="flex items-center gap-2">
+                    <Link to="/dashboard"
+    className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-purple-300 transition-colors px-3 py-1.5 rounded-xl hover:bg-purple-900/20">
+    <LayoutDashboard size={14} />
+    Dashboard
+</Link>
                     <Link to="/my-bookings"
                         className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-purple-300 transition-colors px-3 py-1.5 rounded-xl hover:bg-purple-900/20">
                         <Calendar size={14} />
