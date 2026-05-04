@@ -34,22 +34,26 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
             });
 
             const data = await response.json();
+            console.log('Booking response:', data);
 
             if (response.ok && data.success) {
+                // ✅ Save to sessionStorage as backup in case state gets lost
+                const paymentData = {
+                    bookingId: data.bookingId,
+                    totalFare: data.totalFare,
+                    source: ride.Source,
+                    destination: ride.Destination
+                };
+                sessionStorage.setItem('pendingPayment', JSON.stringify(paymentData));
+
+                // Navigate first then close
+                navigate('/payment', { state: paymentData });
                 onClose();
-                // Redirect to payment page
-                navigate('/payment', {
-                    state: {
-                        bookingId: data.bookingId,
-                        totalFare: data.totalFare,
-                        source: ride.Source,
-                        destination: ride.Destination
-                    }
-                });
             } else {
                 setError(data.message || 'Failed to book ride');
             }
         } catch (err) {
+            console.error('Booking error:', err);
             setError('Failed to connect to server.');
         } finally {
             setLoading(false);
@@ -60,9 +64,9 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
             display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 50 }}>
             <div style={{ background: 'white', borderRadius: 24, padding: 32,
-                width: '100%', maxWidth: 420, margin: '0 16px', boxShadow: '0 25px 60px rgba(0,0,0,0.3)' }}>
+                width: '100%', maxWidth: 420, margin: '0 16px',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.3)' }}>
 
-                {/* Header */}
                 <h2 style={{ fontSize: 22, fontWeight: 700, color: '#111', margin: '0 0 4px' }}>
                     Book Ride
                 </h2>
@@ -70,7 +74,6 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
                     {ride.Source} → {ride.Destination}
                 </p>
 
-                {/* Ride info */}
                 <div style={{ background: '#f8f7ff', borderRadius: 14, padding: '14px 16px', marginBottom: 20 }}>
                     {[
                         ['Driver', ride.DriverName],
@@ -78,36 +81,37 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
                         ['Price per Seat', `Rs. ${ride.PricePerSeat}`],
                     ].map(([label, value]) => (
                         <div key={label} style={{ display: 'flex', justifyContent: 'space-between',
-                            fontSize: 13, padding: '4px 0', color: '#555' }}>
+                            fontSize: 13, padding: '4px 0' }}>
                             <span style={{ color: '#999' }}>{label}</span>
                             <span style={{ fontWeight: 600, color: '#333' }}>{value}</span>
                         </div>
                     ))}
                 </div>
 
-                {/* Seat selector */}
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#333', margin: '0 0 10px' }}>
                     Seats to Book
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
                     <button onClick={() => setSeatsToBook(prev => Math.max(1, prev - 1))}
-                        style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #e5e7eb',
-                            background: '#f9fafb', fontSize: 20, cursor: 'pointer', display: 'flex',
+                        style={{ width: 40, height: 40, borderRadius: '50%',
+                            border: '1.5px solid #e5e7eb', background: '#f9fafb',
+                            fontSize: 20, cursor: 'pointer', display: 'flex',
                             alignItems: 'center', justifyContent: 'center', color: '#555' }}>
                         −
                     </button>
-                    <span style={{ fontSize: 26, fontWeight: 700, color: '#7C3AED', minWidth: 32, textAlign: 'center' }}>
+                    <span style={{ fontSize: 26, fontWeight: 700, color: '#7C3AED',
+                        minWidth: 32, textAlign: 'center' }}>
                         {seatsToBook}
                     </span>
                     <button onClick={() => setSeatsToBook(prev => Math.min(ride.AvailableSeats, prev + 1))}
-                        style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #e5e7eb',
-                            background: '#f9fafb', fontSize: 20, cursor: 'pointer', display: 'flex',
+                        style={{ width: 40, height: 40, borderRadius: '50%',
+                            border: '1.5px solid #e5e7eb', background: '#f9fafb',
+                            fontSize: 20, cursor: 'pointer', display: 'flex',
                             alignItems: 'center', justifyContent: 'center', color: '#555' }}>
                         +
                     </button>
                 </div>
 
-                {/* Total */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     background: '#f5f3ff', borderRadius: 14, padding: '14px 18px', marginBottom: 16 }}>
                     <span style={{ fontSize: 14, fontWeight: 600, color: '#555' }}>Total Estimated</span>
@@ -116,7 +120,6 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
                     </span>
                 </div>
 
-                {/* Error */}
                 {error && (
                     <div style={{ background: '#fef2f2', border: '1px solid #fecaca',
                         borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
@@ -124,18 +127,18 @@ const BookingModal = ({ ride, isOpen, onClose }) => {
                     </div>
                 )}
 
-                {/* Buttons */}
                 <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={onClose}
                         style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none',
-                            background: '#f3f4f6', color: '#555', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                            background: '#f3f4f6', color: '#555', fontSize: 14,
+                            fontWeight: 600, cursor: 'pointer' }}>
                         Cancel
                     </button>
                     <button onClick={handleBook} disabled={loading}
                         style={{ flex: 1, padding: '13px', borderRadius: 12, border: 'none',
                             background: loading ? '#c4b5fd' : '#7C3AED', color: 'white',
-                            fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
-                            transition: 'background 0.15s' }}>
+                            fontSize: 14, fontWeight: 600,
+                            cursor: loading ? 'not-allowed' : 'pointer' }}>
                         {loading ? 'Booking...' : 'Confirm Booking'}
                     </button>
                 </div>
